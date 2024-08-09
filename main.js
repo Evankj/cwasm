@@ -1,4 +1,6 @@
 const canvas = document.createElement("canvas");
+canvas.width = 1920;
+canvas.height = 1080;
 document.body.appendChild(canvas);
 const ctx = canvas.getContext("2d");
 
@@ -13,7 +15,7 @@ function myJavaScriptFunction(x, y, w, h) {
   ctx.fillRect(x, y, w, h);
 }
 
-const MAX_MEMORY = 10;
+const MAX_MEMORY = 65536;
 
 const memory = new WebAssembly.Memory({
   initial: MAX_MEMORY,
@@ -27,9 +29,9 @@ const bumpAllocator = {
   maxSize: MAX_MEMORY * 64
 }
 
-function walloc(size) {
-  const memView = new DataView()
-}
+// function walloc(size) {
+//   const memView = new DataView()
+// }
 
 let bumpPointer = 0;
 
@@ -59,10 +61,17 @@ const importObject = {
       ctx.fillStyle = "red";
       ctx.fillRect(x, y, 10, 10);
     },
+
+    breakpoint: () => {
+      debugger;
+    },
+
     wasm_malloc: function(size) {
       let currentPointer = bumpPointer + heapBase;
       bumpPointer += size;
+      console.log(`Base ptr: ${currentPointer}, Cur ptr: ${currentPointer + bumpPointer}, Remaining space: ${memory.buffer.byteLength - (currentPointer + bumpPointer)}`);
       if (bumpPointer > memory.buffer.byteLength) {
+        console.log("MEMORY OVERRUN");
         return 0; // Indicate memory allocation failure
       }
       return currentPointer;
@@ -136,27 +145,30 @@ fetch('test.wasm')
       }
     });
 
-    let previousTime = 0.0;
 
-    const loop = time => {
-      // Compute the delta-time against the previous time
-      const dt = time - previousTime;
+    const fps = 60;
+    const fpsInterval = 1000 / fps;
+    let then = performance.now();
 
-      // Update the previous time
-      previousTime = time;
 
-      tick(dt);
 
-      // Repeat
-      window.requestAnimationFrame(loop);
+    const loop = () => {
+      requestAnimationFrame(loop);
+
+      const now = performance.now();
+      const elapsed = (now - then);
+
+      if (elapsed >= fpsInterval) {
+        then = now - (elapsed % fpsInterval);
+
+        let dt = elapsed / 100;
+        // let fps = 1000 / elapsed;
+
+        tick(dt);
+      }
     };
 
-    // Launch
-    window.requestAnimationFrame(time => {
-      previousTime = time;
-
-      window.requestAnimationFrame(loop);
-    });
+    loop();
 
 
     // const memView = new DataView(instance.exports.memory.buffer, 1);
