@@ -1,6 +1,8 @@
 #ifndef ECS_H
 #define ECS_H
-#include "arena.h"
+#include "../mem/arena.h"
+#include "../mem/mem.h"
+
 const i32 MAX_COMPONENTS = 192; // This must be a multiple of 64
 const i32 MAX_ENTITIES = 1000;
 const i32 MASK_SECTIONS = MAX_COMPONENTS / 64;
@@ -63,8 +65,12 @@ static ComponentType *worldRegisterComponent(World *world, i32 size,
     section = world->componentCount / 64;
     mask = (1 << world->componentCount) % 64;
   }
-  void *entries =
+
+  void **entries =
+      (void **)world->allocator->allocate(world->allocator, sizeof(void *));
+  void *entriesArray =
       world->allocator->allocate(world->allocator, size * MAX_ENTITIES);
+  *entries = entriesArray;
 
   if (!entries) {
     return (ComponentType *)NULL;
@@ -78,7 +84,7 @@ static ComponentType *worldRegisterComponent(World *world, i32 size,
   component->mask.mask = mask;
   component->mask.section = section;
   component->name = name;
-  component->entries = &entries;
+  component->entries = entries;
   component->size = size;
 
   return component;
@@ -121,12 +127,18 @@ static void *entityGetComponentByID(World *world, EntityID entityID,
   return NULL;
 }
 
+#define GET_COMPONENT_OR_RETURN(varName, world, entityID, componentType, T)    \
+  T *varName = entityGetComponentByID(world, entityID, componentType);         \
+  if (!varName)                                                                \
+    return;
+
 static void *entityAddComponentByID(World *world, EntityID entityID,
                                     ComponentType *componentType) {
   addComponentToMask(&world->entities[entityID].mask, componentType->mask);
 
-  // componentType->entries[entityID] = {0};
+  wemset((u32)componentType->entries[entityID], componentType->size, 0);
 
   return componentType->entries[entityID];
 }
+
 #endif

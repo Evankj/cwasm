@@ -55,11 +55,18 @@ const importObject = {
   env: {
     // memory: memory,
     myJavaScriptFunction: (x, y, w, h) => myJavaScriptFunction(x, y, w, h),
-    debug: (val) => console.log(val),
+    debugi32: (val) => console.log(val),
+    debugf32: (val) => console.log(val),
     setPlayerPos: (x, y) => {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.fillStyle = "red";
       ctx.fillRect(x, y, 10, 10);
+    },
+    drawf32: (val) => {
+      console.log(val);
+      // ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      // ctx.fillStyle = "blue";
+      // ctx.fillText(val, 0, 50);
     },
 
     breakpoint: () => {
@@ -76,6 +83,14 @@ const importObject = {
       }
       return currentPointer;
     },
+
+    wasm_memset: (ptr, size, val) => {
+      const memView = new DataView(wasm.exports.memory.buffer, ptr, size);
+      for (let i = 0; i < size; i++) {
+        memView.setUint8(i, val);
+      }
+    },
+
     print: (start, size) => {
 
       const memView = new DataView(wasm.exports.memory.buffer, start, size);

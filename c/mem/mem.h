@@ -28,4 +28,12 @@ static void *walloc(u32 size) {
 
   return ptr;
 }
+
+
+__attribute__((import_module("env"), import_name("wasm_memset"))) extern i32
+wasm_memset(u32 ptr, u32 size, u32 val);
+
+static void wemset(u32 ptr, u32 size, u32 val) {
+  wasm_memset(ptr, size, val);
+}
 #endif

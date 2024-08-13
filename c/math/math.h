@@ -1,5 +1,5 @@
 #pragma once
-#include "../mem.h"
+#include "../mem/mem.h"
 
 typedef struct {
   f32 x, y;

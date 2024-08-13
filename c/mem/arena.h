@@ -30,12 +30,12 @@ static void arenaDestroy(ArenaAllocator *allocator) {
 }
 
 static ArenaAllocator *arenaAllocatorCreate(u32 capacity, Allocator allocator) {
-  ArenaAllocator *alloc = (ArenaAllocator*)allocator.allocate(sizeof(ArenaAllocator));
+  ArenaAllocator *arena = (ArenaAllocator*)allocator.allocate(sizeof(ArenaAllocator));
 
   // Using our wasm allocator for this:
   void *base = allocator.allocate(capacity);
 
-  *alloc = (ArenaAllocator){
+  *arena = (ArenaAllocator){
     .allocate = arenaAllocate,
     .clear = arenaClear,
     .destroy = arenaDestroy,
@@ -43,6 +43,24 @@ static ArenaAllocator *arenaAllocatorCreate(u32 capacity, Allocator allocator) {
     .offset = 0,
     .capacity = capacity,
   };
-  return alloc;
+  return arena;
 }
+
+static ArenaAllocator *arenaAllocatorCreateScratch(u32 capacity, ArenaAllocator *arena) {
+  ArenaAllocator *scratchArena = (ArenaAllocator*)arena->allocate(arena, sizeof(ArenaAllocator));
+
+  void *base = arena->allocate(arena, capacity);
+
+  *scratchArena = (ArenaAllocator){
+    .allocate = arenaAllocate,
+    .clear = arenaClear,
+    .destroy = arenaDestroy,
+    .base = base,
+    .offset = 0,
+    .capacity = capacity,
+  };
+
+  return scratchArena;
+}
+
 #endif
